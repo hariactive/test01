@@ -1,48 +1,17 @@
-pipeline {
-    agent any
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-    stages {
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/hariactive/test01.git'
-            }
-        }
+# Set the working directory in the container
+WORKDIR /app
 
-        stage('Set Up Virtual Environment') {
-            steps {
-                sh '''
-                    python3 -m venv venv
-                    ./venv/bin/pip install -r requirements.txt
-                '''
-            }
-        }
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-        stage('Run Flask App') {
-            steps {
-                sh '''
-                    nohup ./venv/bin/python3 app.py > flask.log 2>&1 &
-                    sleep 5
-                '''
-            }
-        }
+# Install Flask
+RUN pip install flask
 
-        stage('Test App') {
-            steps {
-                script {
-                    def result = sh(script: "curl -f http://localhost:5000", returnStatus: true)
-                    if (result != 0) {
-                        error("❌ Flask app not running!")
-                    } else {
-                        echo "✅ Flask app is running!"
-                    }
-                }
-            }
-        }
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
 
-        stage('View Flask Logs') {
-            steps {
-                sh 'cat flask.log || echo "No log file found."'
-            }
-        }
-    }
-}
+# Run app.py when the container launches
+CMD ["python", "app.py"]
